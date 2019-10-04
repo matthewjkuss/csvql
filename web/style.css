@@ -1,0 +1,21 @@
+table, th, td {
+    border: 1px solid black;
+}
+
+#box {
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+}
+.row {
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: center;
+}
+
+table {
+    margin: 10px;
+}
