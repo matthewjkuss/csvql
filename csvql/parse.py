@@ -9,11 +9,12 @@ from dataclasses import dataclass
 
 from typing_extensions import Literal
 
-import grammer
-from grammer import Form, Keyword
-from tools import Smariter, Result
+from csvql import grammer
+from csvql.grammer import Form, Keyword
+from csvql import tools
+from .tools import Smariter, Result
 
-import tokenise
+from . import tokenise
 
 
 

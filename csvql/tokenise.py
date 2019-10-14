@@ -7,8 +7,8 @@ from functools import reduce
 
 from typing_extensions import Literal
 
-import grammer
-from tools import Result
+from . import grammer
+from .tools import Result
 
 # First we define the possible labels for our tokens (both intermediate and final).
 

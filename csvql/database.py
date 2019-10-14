@@ -4,7 +4,7 @@ from typing import NamedTuple, List, Optional
 
 import csv
 
-from tools import Result
+from .tools import Result
 
 DB_PATH = "../data/categories.csv"
 

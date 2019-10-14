@@ -6,7 +6,7 @@ from typing import NamedTuple, List
 
 from typing_extensions import Literal
 
-import tools
+from csvql import tools
 
 PrimaryClauses = Literal[
     "select", "update", "insert", "delete"

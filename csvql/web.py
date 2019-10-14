@@ -6,14 +6,14 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict
 
-from tokenise import tokenise
-from parse import parse, print_clause
-from sql import run
+from .tokenise import tokenise
+from .parse import parse, print_clause
+from .sql import run
 import os
 import re
 import urllib
 
-import database
+from . import database
 
 myregex = "^" + "(?P<name>.*)" + "\.csv" + "$"
 

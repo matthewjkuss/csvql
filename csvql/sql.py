@@ -6,11 +6,11 @@ from dataclasses import dataclass
 
 from typing_extensions import Literal
 
-from database import Table
-from tools import Result
+from .database import Table
+from .tools import Result
 
-import parse
-from parse import Clause
+from . import parse
+from .parse import Clause
 
 
 
