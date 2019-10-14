@@ -70,13 +70,3 @@ def select(statement: Select, database: Dict[str, Table]) -> Result[Table]:
         rows = rows[:statement.limit]
     return Result([], Table(columns, rows))
 
-
-# def print_result(result: Result) -> None:
-#     """Print `Result` to stdout."""
-#     for _, field in result.columns:
-#         print(field.name, end="\t")
-#     print()
-#     for row in result.rows:
-#         for _, cell in row:
-#             print(cell, end="\t")
-#         print()
