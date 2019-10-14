@@ -132,11 +132,14 @@ def parse(query: str) -> Result[Clause]:
     #remainder = list(x[0].value for x in list(token_iter))
     #if remainder:
     #    result.messages.append(f"Warning: Tokens {remainder} still remain.")
+    result.messages += [f"Note: {print_clause(result.value)}"]
     result.messages += [f"Note: Tokens are {list(x.value for x in tokens)}."]
     return result
 
 
 def print_clause(clause: Clause, depth: int = 2) -> str:
+    if not clause:
+        return ""
     result = ""
     indent = '\t' * depth
     result += f"{indent}- {clause.form.name.upper()}: {clause.flags if clause.flags else {}} - {clause.expression}\n"
