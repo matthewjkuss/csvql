@@ -19,6 +19,7 @@ from parse import Clause
 class Select:
     distinct: bool
     columns: Union[List[str], Literal["*"]]
+    order: List[str]
     table: str
     limit: Optional[int]
 
@@ -27,11 +28,15 @@ def make_select(statement: Clause) -> Select:
     columns: Union[List[str], Literal["*"]] = statement.expression
     table: str = statement.children['from'].expression
     limit: Optional[int]
+    if 'order by' in statement.children:
+        order = statement.children['order by'].expression
+    else:
+        order = None
     if 'limit' in statement.children:
         limit = int(statement.children['limit'].expression)
     else:
         limit = None
-    return Select(distinct, columns, table, limit)
+    return Select(distinct, columns, order, table, limit)
 
 def run(query: str, database: Dict[str, Table]) -> Result[Table]:
     parsed = parse.parse(query)
@@ -57,7 +62,9 @@ def select(statement: Select, database: Dict[str, Table]) -> Result[Table]:
     except ValueError as err:
         return Result([f"Error: Column named `{str(err).split()[0][1:-1]}` cannot be found."])
     rows = [[row[idx] for idx in column_idx] for row in table.rows]
-    rows.sort()
+    # TODO Implement `order by`
+    if statement.order:
+        rows.sort(key=lambda x: x[statement.order[0]])
     if statement.distinct:
         deduped_rows = []
         last = None
@@ -69,4 +76,3 @@ def select(statement: Select, database: Dict[str, Table]) -> Result[Table]:
     if statement.limit:
         rows = rows[:statement.limit]
     return Result([], Table(columns, rows))
-
