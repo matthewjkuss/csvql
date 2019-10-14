@@ -4,7 +4,7 @@ import time
 import json
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any
+from typing import Any, Dict
 
 from tokenise import tokenise
 from parse import parse, print_clause
@@ -17,14 +17,23 @@ import database
 
 myregex = "^" + "(?P<name>.*)" + "\.csv" + "$"
 
-for file in os.listdir("../data/"):
-    foo: str
-    print(re.match(myregex, file).group('name'))
-table = database.load_table("../data/" + "categories" + ".csv").value
-if not table:
-    exit()
+DATABASE: Dict[str, database.Table] = {}
 
-DATABASE = {"categories" : table}
+print("Loading tables...")
+for file in os.listdir("../data/"):
+    match = re.match(myregex, file)
+    if not match:
+        continue
+    name = match.group('name')
+    if not name:
+        continue
+    table = database.load_table("../data/" + name + ".csv").value
+    if not table:
+        continue
+    DATABASE.update({name : table})
+
+print("Loaded tables:", DATABASE.keys())
+
 
 HOSTNAME = "localhost"
 HOSTPORT = 8080
