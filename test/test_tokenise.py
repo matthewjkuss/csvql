@@ -27,6 +27,9 @@ class Tokenise(unittest.TestCase):
     def test_keyword(self):
         self.assertEqual([("keyword", "select")], tokenise("select").value)
 
+    def test_split_keyword(self):
+        self.assertEqual([("keyword", "order by")], tokenise("order by").value)
+
     def test_empty_word(self):
         self.assertEqual(tokenise("\"\"").value, [("word", "")])
 
