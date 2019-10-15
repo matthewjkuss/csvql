@@ -31,6 +31,11 @@ function drawTable(tablename, table) {
     })
 }
 
+function reqError() {
+    console.log("Error: Could not connect to server!")
+    alert("Error: Could not connect to server!")
+}
+
 function reqListener() {
   console.log(this.response);
   var table = document.getElementById('messages')
@@ -55,4 +60,5 @@ function sendRequest(str) {
 
 var oReq = new XMLHttpRequest();
 oReq.addEventListener("load", reqListener);
+oReq.addEventListener("error", reqError);
 oReq.responseType = "json";
