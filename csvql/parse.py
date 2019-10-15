@@ -122,8 +122,8 @@ def parse(query: str) -> Result[Clause]:
     # Tokenise
     tokenise_result = tokenise.tokenise(query)
     tokens = tokenise_result.value
-    if tokens is None:
-        return Result(["Error: No tokens generated."] + tokenise_result.messages)
+    if not tokens:
+        return Result(["Error: No tokens to consume."] + tokenise_result.messages)
     #token_iter = look_ahead(iter(tokens))
     token_iter = Smariter(tokens)
     next(token_iter)
