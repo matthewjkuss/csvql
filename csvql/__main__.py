@@ -1,5 +1,5 @@
 """Run."""
 
-import csvql
+from csvql import web
 
-csvql.web.main()
+web.main()
