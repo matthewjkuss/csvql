@@ -5,7 +5,7 @@
 
 import unittest
 
-from .parse import parse
+from csvql.parse import parse
 
 class Parse(unittest.TestCase):
     def test_empty(self):

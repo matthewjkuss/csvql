@@ -5,7 +5,7 @@
 
 import unittest
 
-from tokenise import tokenise
+from csvql.tokenise import tokenise
 
 class Tokenise(unittest.TestCase):
     def test_empty(self):
