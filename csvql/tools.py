@@ -19,13 +19,6 @@ def extract_literals(literal: Any) -> List[Any]:
     return result
 
 
-@dataclass
-class Result(Generic[T]):
-    """Hold value and messages from value creation."""
-    messages: List[str]
-    value: Optional[T] = None
-
-
 class Smariter(collections.abc.Iterator, Generic[T]):  # type: ignore
     """A smarter iter, which allows for looking ahead, and reading values multiple times."""
 

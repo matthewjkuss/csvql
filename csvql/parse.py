@@ -7,15 +7,17 @@ from __future__ import annotations
 from typing import List, Dict, Any, Union, Optional, Set
 from dataclasses import dataclass
 
+import logging
+
 from typing_extensions import Literal
 
 from csvql import grammer
 from csvql.grammer import Form, Keyword
-from csvql import tools
-from .tools import Smariter, Result
+from .tools import Smariter
 
-from . import tokenise
+from .tokenise import Token
 
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,7 +36,7 @@ def get_form(value: str) -> Optional[Form]:
     return None
 
 
-def parse_query(token_iter: Any) -> Result[(Clause)]:
+def parse_query(token_iter: Any) -> Optional[Clause]:
     messages = []
     flags: Set[Keyword] = set()
     form: Form
@@ -45,22 +47,28 @@ def parse_query(token_iter: Any) -> Result[(Clause)]:
     #    first_token = next(token_iter)
     #except StopIteration:
     if not token_iter.value():
-        return Result(["Error: No tokens to consume."])
+        log.error("No tokens to consume.")
+        return None
     first_token = token_iter.value()
     if not first_token.label == "keyword":
-        return Result([f"Error: Expected keyword, but got `{first_token.value}`."])
+        log.error(f"Expected keyword, but got `{first_token.value}`.")
+        return None
     first_form = get_form(first_token.value)
-    if first_form is None and not token_iter.look_ahead(1):
-        return Result([f"Error: Keyword `{first_token.value}` is not a valid clause name."])
-    if first_form is None and token_iter.look_ahead(1):
-        second_token = next(token_iter)
-        second_form = get_form(second_token.value)
-        if second_form is None:
-            return Result([f"Error: Neither `{first_token.value}` nor `{second_token.value}` are valid clause names."])
-        if not first_token.value in second_form.prefix_flags:
-            return Result([f"Error: Keyword `{first_token.value}` is not a valid prefix for `{second_token.value}`."])
-        flags.add(first_token.value)
-        form = second_form
+    if first_form is None: 
+        if not token_iter.look_ahead(1):
+            log.error(f"Keyword `{first_token.value}` is not a valid clause name.")
+            return None
+        if token_iter.look_ahead(1):
+            second_token = next(token_iter)
+            second_form = get_form(second_token.value)
+            if second_form is None:
+                log.error(f"Neither `{first_token.value}` nor `{second_token.value}` are valid clause names.")
+                return None
+            if not first_token.value in second_form.prefix_flags:
+                log.error(f"Keyword `{first_token.value}` is not a valid prefix for `{second_token.value}`.")
+                return None
+            flags.add(first_token.value)
+            form = second_form
     else:
         form = first_form
     next(token_iter)
@@ -91,7 +99,7 @@ def parse_query(token_iter: Any) -> Result[(Clause)]:
                 if token_iter.value().label == "keyword":
                     break
                 elif token.label == "operator" and token.value != ",":
-                    return Result([f"Error: `{token.value} is not a valid operator in column list.`"])
+                    log.error(f"`{token.value} is not a valid operator in column list.`")
                 elif token.value == ",":
                     pass
                 else:
@@ -100,41 +108,39 @@ def parse_query(token_iter: Any) -> Result[(Clause)]:
     # ---
     for x in form.required_clauses:
         if token_iter.value().value != x:
-            return Result([f"Error: `{x}` clause required."])
+            log.error(f"`{x}` clause required.")
         result = parse_query(token_iter)
-        if result.value is None:
-            return Result(["Error: Recursive call failed."] + result.messages)
-        children.update({result.value.form.name: result.value})
+        if result is None:
+            log.error("Recursive call failed.")
+        children.update({result.form.name: result})
     # ---
     for x in form.optional_clauses:
         if not token_iter.value() or token_iter.value().value != x:
             messages.append(f"Note: Optional clause `{x}` is absent.")
             continue
         result = parse_query(token_iter)
-        if result.value is None:
-            return Result(["Error: Recursive call failed."] + result.messages)
-        children.update({result.value.form.name: result.value})
+        if result is None:
+            log.error("Recursive call failed.")
+        children.update({result.form.name: result})
 
-    return Result(messages, Clause(form, flags, expression, children))
+    return Clause(form, flags, expression, children)
 
 
-def parse(query: str) -> Result[Clause]:
+def parse(tokens: Optional[List[Token]]) -> Optional[Clause]:
     # Tokenise
-    tokenise_result = tokenise.tokenise(query)
-    tokens = tokenise_result.value
     if not tokens:
-        return Result(["Error: No tokens to consume."] + tokenise_result.messages)
+        log.error("Error: No tokens to consume.")
     #token_iter = look_ahead(iter(tokens))
     token_iter = Smariter(tokens)
     next(token_iter)
     result = parse_query(token_iter)
-    if result.value and not result.value.form.primary:
-        return Result(result.messages + [f"Error: Clause `{result.value.form.name}` is not primary."])
+    if result and not result.form.primary:
+        log.error(f"Error: Clause `{result.form.name}` is not primary.")
     #remainder = list(x[0].value for x in list(token_iter))
     #if remainder:
     #    result.messages.append(f"Warning: Tokens {remainder} still remain.")
-    result.messages += [f"Note: {print_clause(result.value)}"]
-    result.messages += [f"Note: Tokens are {list(x.value for x in tokens)}."]
+    log.info(f"Parsed clause as {print_clause(result)}")
+    log.info(f"Tokens are {list(x.value for x in tokens)}.")
     return result
 
 

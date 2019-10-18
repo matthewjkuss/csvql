@@ -3,12 +3,14 @@
 from typing import NamedTuple, List, Tuple, Match
 
 import re
+import logging
 from functools import reduce
 
 from typing_extensions import Literal
 
 from . import grammer
-from .tools import Result
+
+log = logging.getLogger(__name__)
 
 # First we define the possible labels for our tokens (both intermediate and final).
 
@@ -49,7 +51,7 @@ def extract_token(match: Match[str]) -> Token:
     """Provided with a match, extract a token."""
     for key, value in match.groupdict().items():
         if value:
-            print("Debug - Token:", key, value)
+            log.debug("Debug - Token: %s %s", key, value)
             if key == "squote":
                 if value[0] == "\'" and value[-1] == "\'":
                     value = value[1:-1]
@@ -66,8 +68,8 @@ def extract_token(match: Match[str]) -> Token:
 
 # And finally we bring it all together!
 
-def tokenise(query: str) -> Result[List[Token]]:
+def tokenise(query: str) -> List[Token]:
     """Generate tokens for a given SQL query."""
-    print("Debug - Regex:", group_regexes(reg_list))
+    log.debug("Debug - Regex: %s", group_regexes(reg_list))
     matches = re.finditer(group_regexes(reg_list), query)
-    return Result([], [extract_token(token) for token in matches])
+    return [extract_token(token) for token in matches]

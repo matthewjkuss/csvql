@@ -3,8 +3,9 @@
 from typing import NamedTuple, List, Optional
 
 import csv
+import logging
 
-from .tools import Result
+log = logging.getLogger(__name__)
 
 DB_PATH = "../data/categories.csv"
 
@@ -13,7 +14,7 @@ class Table(NamedTuple):
     columns: List[str]
     rows: List[List[str]]
 
-def load_table(db_path: str) -> Result[Table]:
+def load_table(db_path: str) -> Optional[Table]:
     """Load a CSV file into a `Table`."""
     with open(db_path) as csv_file:
         reader = csv.reader(csv_file)
@@ -25,5 +26,6 @@ def load_table(db_path: str) -> Result[Table]:
             else:
                 rows.append(row)
         if columns:
-            return Result([], Table(columns, rows))
-    return Result(["Error"])
+            return Table(columns, rows)
+    log.warning("Unable to load file at {db_path}.")
+    return None
