@@ -4,9 +4,13 @@ import re
 from dataclasses import dataclass
 from typing import List, Match, Dict, Any, Optional, Callable
 
+import logging
+
 from . import tokenise
 
-TEST_QUERY = "from table select id, name cross join table2; from table2 select count(distinct id);"
+logger = logging.getLogger(__name__)
+
+TEST_QUERY = "from table select * id, name cross join table2; from table2 select count(distinct id foo );"
 
 TOKEN_LIST = [
     ("w", "Word"),
@@ -34,7 +38,7 @@ TEST_STR = "".join([TOKEN_MAP[token.label.capitalize()] for token in TEST_TOKENS
 
 PATTERNS = {
     "ast" : "{statement}*",
-    "statement" : "{clause}* Semicolon",
+    "statement" : "{clause}+ Semicolon",
     "clause" : "Prefix* Clause ({column_list}|{list}|{expression}) Postfix*",
     "column_list" : "Prefix? ({aggregate}|{column}) (Comma ({aggregate}|{column}))*",
     "aggregate" : "Aggregate Left Prefix? {column} Right",
@@ -99,13 +103,13 @@ def mask(candidate: str, matched: str) -> str:
     return "_" if matched != "_" else candidate
 
 @dataclass
-class Tree:
+class Node:
     name: str
     match: str
     exclusion: str
-    children: List['Tree']
+    children: List['Node']
 
-def rere(expr: Expr, query: str, depth: int = 0, start: int = 0, end: int = -1) -> List[Tree]:
+def rere(expr: Expr, query: str, depth: int = 0, start: int = 0, end: int = -1) -> List[Node]:
     if end == -1:
         end = len(query)
     try:
@@ -114,7 +118,8 @@ def rere(expr: Expr, query: str, depth: int = 0, start: int = 0, end: int = -1) 
         print(exception.__dict__)
         print(exception.pattern[exception.pos:]) # type: ignore
         raise exception
-    big_ls: List[Tree] = []
+    big_ls: List[Node] = []
+    global_matched = query
     for match in results:
         if not match[0]:
             continue
@@ -123,11 +128,14 @@ def rere(expr: Expr, query: str, depth: int = 0, start: int = 0, end: int = -1) 
         sub_end = start + match.end(0)
 
         matched = clear_complement(query, sub_start, sub_end)
+        # print(global_matched, 1, expr.name)
+        global_matched = str_zip(mask, global_matched, matched)
+        # print(global_matched, 2, expr.name)
         candidates = matched
 
         if not expr.children:
-            big_ls.append(Tree(expr.name, candidates, candidates, []))
-        little_ls: List[Tree] = []
+            big_ls.append(Node(expr.name, candidates, candidates, []))
+        little_ls: List[Node] = []
         exclude: str = matched
         for child_expr in expr.children:
             new = rere(EXPRS[child_expr], candidates, depth+1, sub_start, sub_end)
@@ -136,7 +144,12 @@ def rere(expr: Expr, query: str, depth: int = 0, start: int = 0, end: int = -1) 
                 exclude = str_zip(mask, exclude, tree.match)
             little_ls += new
         if little_ls:
-            big_ls.append(Tree(expr.name, matched, str_zip(union, matched, exclude), little_ls))
+            big_ls.append(Node(expr.name, matched, str_zip(union, matched, exclude), little_ls))
+    if depth == 0 and global_matched.replace("", "_"):
+        for match in re.finditer("[^_]+", global_matched):
+            logger.error("Could not parse '%s'." % 
+                " ".join([TEST_TOKENS[pos].value for pos in range(match.start(), match.end())])
+            )
     return big_ls
 
 result = rere(EXPRS['ast'], TEST_STR)
@@ -148,7 +161,7 @@ def color(match: str, exclusion: str) -> str:
         return match
     return '_'
 
-def print_tree(tree_list: List[Tree], depth: int = 0) -> str:
+def print_tree(tree_list: List[Node], depth: int = 0) -> str:
     return (
         "".join([f"{str_zip(color, tree.match, tree.exclusion)} | {depth * '. ' + tree.name:<20} | {[(pos, TOKEN_MAP[key], TEST_TOKENS[pos].value) for (pos, key) in enumerate(tree.exclusion) if key != '_' and TOKEN_MAP[key] not in DISCARDABLE_TOKENS]}\n" + print_tree(tree.children, depth+1) for tree in tree_list])
     )
