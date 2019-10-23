@@ -79,10 +79,12 @@ def varify(obj: Any) -> Any:
         return obj
     if isinstance(obj, list):
         return obj
+    if obj is None:
+        return obj
     if isinstance(obj, tuple):
         return varify(obj._asdict())
     if not hasattr(obj, '__dict__'):
-        log.info("Note: %s", obj)
+        log.debug("Unhandled varify object %s", obj)
         return obj
     mapping = vars(obj)
     for key, value in mapping.items():
@@ -107,6 +109,7 @@ class MyServer(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes(WEB_STYLE, "utf-8"))   
         else:
+            log_queue.queue.clear()
             query = sanitise(self.path[1:])
             log.debug("Query: %s", query)
             tokens = tokenise.tokenise(query)
@@ -118,7 +121,6 @@ class MyServer(BaseHTTPRequestHandler):
             result = execute.select(command, DATABASE)
             log.debug("Result: %s", result)
             self.wfile.write(bytes(json.dumps(varify({"value" : result, "messages" : [record.getMessage() for record in list(log_queue.queue)]})), "utf-8"))
-            log_queue.queue.clear()
             #self.wfile.write(bytes(json.dumps(varify(parse(sanitise(self.path)))), "utf-8"))
     
     def do_POST(self) -> None:

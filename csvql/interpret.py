@@ -8,7 +8,9 @@ from .parse import Clause
 from .transactions import Select
 
 
-def make_select(statement: Clause) -> Select:
+def make_select(statement: Optional[Clause]) -> Optional[Select]:
+    if not statement:
+        return None
     distinct: bool = statement.flags and "distinct" in statement.flags
     columns: Union[List[str], Literal["*"]] = statement.expression
     table: str = statement.children['from'].expression

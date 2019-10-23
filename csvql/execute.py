@@ -24,8 +24,10 @@ def run(query: str, database: Dict[str, Table]) -> Optional[Table]:
 def sort_order(array: List[Any], order: List[int]) -> List[Any]:
     return [array[x] for x in order]
 
-def select(statement: Select, database: Dict[str, Table]) -> Optional[Table]:
+def select(statement: Optional[Select], database: Dict[str, Table]) -> Optional[Table]:
     """Run select style command on database."""
+    if not statement:
+        return None
     table = database.get(statement.table)
     if not table:
         log.error(f"Table `{statement.table}` not found")
