@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 # First we define the possible labels for our tokens (both intermediate and final).
 
-TokenLabel = Literal["operator", "word", "keyword", "number"]  # pylint: disable=invalid-name
+TokenLabel = Literal["left", "right", "comma", "operator", "word", "clause", "asterisk", "prefix", "postfix", "semicolon", "aggregate", "number"]  # pylint: disable=invalid-name
 RegexLabel = Literal["dquote", "squote", TokenLabel]  # pylint: disable=invalid-name
 
 
@@ -37,8 +37,16 @@ def group_regexes(regexes: List[Tuple[RegexLabel, str]]) -> str:
 reg_list: List[Tuple[RegexLabel, str]] = [
     ("dquote", '(")(""|[^"])*(")'),
     ("squote", "(')(''|[^'])*(')"),
-    ("keyword", "(?i:" + or_regexes(grammer.KEYWORDS) + ")"),
-    ("operator", or_regexes(["\\" + x for x in grammer.OPERATORS])),
+    ("left", re.escape("(")),
+    ("right", re.escape(")")),
+    ("comma", re.escape(",")),
+    ("semicolon", re.escape(";")),
+    ("asterisk", re.escape("*")),
+    ("prefix", "(?i:" + or_regexes(grammer.PREFIX) + ")"),
+    ("postfix", "(?i:" + or_regexes(grammer.POSTFIX) + ")"),
+    ("clause", "(?i:" + or_regexes(grammer.CLAUSE) + ")"),
+    ("aggregate", "(?i:" + or_regexes(grammer.AGGREGATE) + ")"),
+    ("operator", or_regexes([re.escape(x) for x in grammer.OPERATORS])),
     ("number", r"\d+"),
     ("word", r"\w+|\*"),
 ]

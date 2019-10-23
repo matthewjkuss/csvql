@@ -4,36 +4,13 @@ import re
 from dataclasses import dataclass
 from typing import List, Match, Dict, Any, Optional, Callable
 
+from . import tokenise
+
 TEST_QUERY = "from table select id, name cross join table2; from table2 select count(distinct id);"
-
-TEST_STR = "cwcw,wbcw;cwcf(bw);"
-
-TEST_AST = [
-    ("statement", [
-        ("clause", [
-            ("Clause", "from"),
-            ("Word", "table")
-        ]),
-        ("clause", [
-            ("Clause", "select"),
-            ("Word", "id"),
-            ("Word", "name")
-        ]),
-        ("clause", [
-            ("Prefix", "cross"),
-            ("Clause", "join"),
-            ("Word", "table")
-        ])
-    ]),
-    ("statement", [
-        ("clause"),
-        ("clause")
-    ])
-]
 
 TOKEN_LIST = [
     ("w", "Word"),
-    ("f", "Function"),
+    ("f", "Aggregate"),
     ("c", "Clause"),
     ("b", "Prefix"),
     ("a", "Postfix"),
@@ -51,12 +28,16 @@ TOKEN_MAP = {
     **{key: value for (value, key) in TOKEN_LIST}
 }
 
+TEST_TOKENS = tokenise.tokenise(TEST_QUERY)
+
+TEST_STR = "".join([TOKEN_MAP[token.label.capitalize()] for token in TEST_TOKENS])
+
 PATTERNS = {
     "ast" : "{statement}*",
     "statement" : "{clause}* Semicolon",
     "clause" : "Prefix* Clause ({column_list}|{list}|{expression}) Postfix*",
     "column_list" : "Prefix? ({aggregate}|{column}) (Comma ({aggregate}|{column}))*",
-    "aggregate" : "Function Left Prefix? {column} Right",
+    "aggregate" : "Aggregate Left Prefix? {column} Right",
     "column" : "Word | Asterisk",
     "list" : "Word (Comma Word)*",
     "expression" : "Word"
@@ -169,7 +150,7 @@ def color(match: str, exclusion: str) -> str:
 
 def print_tree(tree_list: List[Tree], depth: int = 0) -> str:
     return (
-        "".join([f"{str_zip(color, tree.match, tree.exclusion)} | {depth * '. ' + tree.name:<20} | {[(pos, TOKEN_MAP[key]) for (pos, key) in enumerate(tree.exclusion) if key != '_' and TOKEN_MAP[key] not in DISCARDABLE_TOKENS]}\n" + print_tree(tree.children, depth+1) for tree in tree_list])
+        "".join([f"{str_zip(color, tree.match, tree.exclusion)} | {depth * '. ' + tree.name:<20} | {[(pos, TOKEN_MAP[key], TEST_TOKENS[pos].value) for (pos, key) in enumerate(tree.exclusion) if key != '_' and TOKEN_MAP[key] not in DISCARDABLE_TOKENS]}\n" + print_tree(tree.children, depth+1) for tree in tree_list])
     )
 
 print(print_tree(result))

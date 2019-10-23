@@ -8,33 +8,40 @@ from typing_extensions import Literal
 
 from csvql import tools
 
-PrimaryClauses = Literal[
+PrimaryClause = Literal[
     "select", "update", "insert", "delete"
 ]
 
-SecondaryClauses = Literal[
+SecondaryClause = Literal[
     "where", "from", "group by", "order by", "join", "limit"
 ]
 
-Flags = Literal[
-    "distinct", "asc", "desc", "inner"
+Aggregate = Literal[
+    "count", "range", "sum"
 ]
 
-Clauses = Literal[PrimaryClauses, SecondaryClauses]
+Prefix = Literal["distinct", "inner", "cross"]
 
-Keyword = Literal[Clauses, Flags]
+Postfix = Literal["asc", "desc"]
 
-Operator = Literal["(", ")", ",", "+", ";"]
+Clause = Literal[PrimaryClause, SecondaryClause]
+
+Keyword = Literal[Clause, Aggregate, Prefix, Postfix]
+
+Operator = Literal["+"]
 
 ExprType = Literal[
     "condition", "column-list", "table-name", "number", "none"
 ]
 
 
-PRIMARY_CLAUSES = tools.extract_literals(PrimaryClauses)  # type: ignore
-CLAUSES = tools.extract_literals(Clauses)  # type: ignore
-KEYWORDS = tools.extract_literals(Keyword)  # type: ignore
-OPERATORS = tools.extract_literals(Operator)  # type: ignore
+PRIMARY_CLAUSE = tools.extract_literals(PrimaryClause) # type: ignore
+CLAUSE = tools.extract_literals(Clause) # type: ignore
+AGGREGATE = tools.extract_literals(Aggregate) # type: ignore
+PREFIX = tools.extract_literals(Prefix) # type: ignore
+POSTFIX = tools.extract_literals(Postfix) # type: ignore
+KEYWORDS = tools.extract_literals(Keyword) # type: ignore
+OPERATORS = tools.extract_literals(Operator) # type: ignore
 
 
 class Form(NamedTuple):
